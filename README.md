@@ -9,9 +9,9 @@ unzip lowkey-backup.zip
 cd lowkey-backup
 sudo ./install.sh
 ```
-
+## Gui:
 Web: http://<host>:8585
-Service:
+## Services:
 ```bash
 systemctl status lowkey-backup
 journalctl -u lowkey-backup -f
