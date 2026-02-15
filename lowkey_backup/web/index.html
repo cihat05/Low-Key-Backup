@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Low-Key – Backup</title>
+  <style>
+    :root{--ok:#1f8b4c;--bad:#b42318;}
+    body{font-family:system-ui,Segoe UI,Roboto,sans-serif;margin:18px;max-width:1200px}
+    h1{margin:0 0 10px;font-size:22px}
+    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+    .card{background:#f6f6f6;border-radius:14px;padding:12px}
+    label{display:block;font-weight:700;margin:8px 0 4px}
+    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;background:#fff}
+    .row4{display:grid;grid-template-columns:2fr 2fr 2fr 1fr;gap:10px}
+    .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer;font-weight:800}
+    .btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+    .btn.bad{background:var(--bad);color:#fff;border-color:var(--bad)}
+    .btn.primary{background:#111;color:#fff;border-color:#111}
+    .pill{padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #ddd;font-size:12px}
+    .muted{color:#666;font-size:12px}
+    .step{display:none}
+    .step.active{display:block}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #ddd;vertical-align:top;text-align:left}
+    th{font-size:12px;color:#666}
+    .actions{display:flex;gap:8px}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:14px}
+    .modal.active{display:flex}
+    .box{background:#fff;border-radius:14px;padding:12px;width:min(780px,100%)}
+    .list{max-height:380px;overflow:auto;border:1px solid #eee;border-radius:12px;padding:6px}
+    .item{padding:10px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between}
+    .item:hover{background:#f5f5f5}
+  </style>
+</head>
+<body>
+  <h1>Low-Key – Backupsoftware by gzumhat v1</h1>
+  <h2>Prerequisite for using the software: the hosts already know each other and have exchanged SSH keys.<h2>
+  <div class="grid">
+    <div class="card">
+      <h2>SOURCE </h2>
+      <div class="row4">
+        <div><label>Host</label><input id="src_host" placeholder="hostname/ipaddress"></div>
+        <div><label>Username</label><input id="src_user" placeholder="username"></div>
+        <div><label>PW/AuthKey</label><input id="src_secret" type="password" placeholder="password or key"></div>
+        <div><label>Port</label><input id="src_port" value="22"></div>
+      </div>
+      <div class="inline">
+        <select id="src_auth"><option value="password">password</option><option value="key">key</option></select>
+        <button id="src_connect" class="btn" onclick="connectSSH('src')">Connect</button>
+        <button id="src_browse" class="btn" onclick="openBrowse('src')" disabled>Browse</button>
+        <span class="pill" id="src_status">not connected</span>
+      </div>
+      <label>Selected Path</label>
+      <input id="src_path" value="/" readonly>
+
+      <div class="step active" id="step_dest">
+        <h2>DESTINATION</h2>
+        <div class="row4">
+          <div><label>Host</label><input id="dst_host" placeholder="hostname/ipaddress"></div>
+          <div><label>Username</label><input id="dst_user" placeholder="username"></div>
+          <div><label>PW/AuthKey</label><input id="dst_secret" type="password" placeholder="password"></div>
+          <div><label>Port</label><input id="dst_port" value="22"></div>
+        </div>
+        <div class="inline">
+         <!-- <select id="dst_auth"><option value="key">key</option><option value="password">password</option></select>-->
+	  <select id="dst_auth"><option value="password">password</option><option value="key">key</option></select>
+          <button id="dst_connect" class="btn" onclick="connectSSH('dst')">Connect</button>
+          <button id="dst_browse" class="btn" onclick="openBrowse('dst')" disabled>Browse</button>
+          <span class="pill" id="dst_status">not connected</span>
+        </div>
+        <label>Selected Path</label>
+        <input id="dst_path" value="">
+
+        <div class="step" id="step_jobcfg">
+          <h2>JOB CONFIGURATION</h2>
+          <label>Backupname</label>
+          <input id="job_name" placeholder="backup job name">
+          <label>Days</label>
+          <div class="inline">
+            <label class="pill"><input type="checkbox" class="day" value="MO"> MO</label>
+            <label class="pill"><input type="checkbox" class="day" value="TU"> TU</label>
+            <label class="pill"><input type="checkbox" class="day" value="WE"> WE</label>
+            <label class="pill"><input type="checkbox" class="day" value="TH"> TH</label>
+            <label class="pill"><input type="checkbox" class="day" value="FR"> FR</label>
+            <label class="pill"><input type="checkbox" class="day" value="SA"> SA</label>
+            <label class="pill"><input type="checkbox" class="day" value="SO"> SO</label>
+          </div>
+          <div class="inline">
+            <div style="flex:1">
+              <label>TIME</label>
+              <select id="job_time"></select>
+            </div>
+            <div style="flex:1">
+              <label>KeepBackup</label>
+              <select id="job_keep">
+                <option>ALL</option>
+                <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+                <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
+              </select>
+            </div>
+          </div>
+          <label>Type</label>
+          <div class="inline">
+            <label class="pill"><input type="radio" name="job_type" value="FULL" checked> FULL</label>
+            <label class="pill"><input type="radio" name="job_type" value="INCR"> INCR</label>
+          </div>
+          <div class="inline">
+            <button class="btn primary" onclick="saveJob()">Save</button>
+            <span class="muted" id="save_msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>SAVED JOBS</h2>
+      <table>
+        <thead><tr><th>Name</th><th>Days</th><th>Time</th><th>Keep</th><th>Type</th><th>Actions</th><th>Source → Destination Path/Path</th></tr></thead>
+        <tbody id="jobs_body"></tbody>
+      </table>
+      <div class="inline"><button class="btn" onclick="loadJobs()">Refresh</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="browse_modal">
+    <div class="box">
+      <div class="inline" style="justify-content:space-between">
+        <div>
+          <div style="font-weight:900">Browse</div>
+          <div class="muted" id="browse_where"></div>
+        </div>
+        <div class="inline">
+          <button class="btn" onclick="browseUp()">Up</button>
+          <button class="btn bad" onclick="closeBrowse()">Close</button>
+        </div>
+      </div>
+
+      <div style="margin:10px 0">
+        <div class="muted">Current Path</div>
+        <input id="browse_path" readonly>
+      </div>
+
+      <div class="list" id="browse_list"></div>
+
+      <div class="inline" style="justify-content:space-between;margin-top:10px">
+        <div class="muted" id="browse_err"></div>
+        <button class="btn" onclick="selectBrowse()">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
